@@ -352,14 +352,12 @@ function macro_end_macro_session() {
  */
 function drupal_execute_macro($macro) {
   foreach ($macro as $key => $data) {
-    $result = db_query("SELECT file FROM {menu_router} WHERE path = '%s'", $data['path']);
-    while ($router_item = db_fetch_array($result)) {
-      if (!empty($router_item['file'])) {
-        include_once($router_item['file']);
-      }
+    $item = menu_get_item($data['path']);
+    if ($item && !empty($item['file'])) {
+      include_once $item['file'];
     }
   }
-  
+
   $results = array();
   foreach ($macro as $key => $data) {
     $param = unserialize($data['parameters']);
