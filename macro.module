@@ -1,15 +1,11 @@
 <?php
 // $Id$
 
-
 /**
- *
  * @file
  * - allow administrators to record (export) form submissions
  * - allow administrators to replay (import) form submissions
- * 
  */
-
 
 /**
  * Implementation of hook_help().
@@ -45,7 +41,7 @@ function macro_init() {
       '%d' => count(variable_get('macro_submissions', array())),
       '!link' => l('End session', 'admin/build/macro/export/session/end')
     );
-    
+
     drupal_set_message(t('[Active macros: %d | !link]', $args));
   }
 }
@@ -118,12 +114,12 @@ function macro_form_alter(&$form, $form_state, $form_id) {
         $form['macro-actions'] = array('#type' => 'fieldset', '#title' => t('Macro actions'), '#weight' => 5000, '#collapsible' => TRUE, '#collapsed' => TRUE);
         $form['macro-actions']['import-data'] = array('#type' => 'submit', '#name' => 'import', '#value' => t('Import'), '#submit' => array('macro_import_action_submit'));
         $form['macro-actions']['export-data'] = array('#type' => 'submit', '#name' => 'export', '#value' => t('Export'), '#submit' => array('macro_export_action_submit'));
-        
+
         if (!variable_get('macro_enabled', FALSE)) {
           $form['macro-actions']['export-session-data'] = array('#type' => 'submit', '#value' => t('Start session'), '#submit' => array('macro_export_session_action_submit'));
         }
       }
-      
+
       // Add the record callback on submit.
       if ($form_id != 'macro_import_macro' && variable_get('macro_enabled', FALSE)) {
         $form['#submit'][] = 'macro_record_macro';
@@ -177,15 +173,15 @@ function macro_export_session_action_submit($form, &$form_state) {
  */
 function macro_record_macro($form, &$form_state) {
   $macros = variable_get('macro_submissions', array());
-  
+
   // Remove the $form_state as it will be rebuilt on import.
   array_shift($form['#parameters']);
-  
+
   // TODO: Why is it when the record method is called through the $form['#submit'] when
   // the action buttons are not displayed do these exception values not show up in the 'values' ?
   $exceptions = array('export', 'export-data', 'export-session-data', 'import-data',
     'form_id', 'submit', 'reset', 'form_build_id', 'form_token', 'delete');
-  
+
   // Remove the unneeded values that this module implements.
   foreach ($exceptions as $exception) {
     unset($form_state['values'][$exception]);  
@@ -212,17 +208,17 @@ function macro_record_macro($form, &$form_state) {
  * not defined and we cannot define it either. So we recursively cast all objects to arrays.
  */
 function _macro_recursively_convert_objects_to_arrays($entity) {
-  $converted = array ( );
+  $converted = array();
 
   foreach (((array) $entity) as $key => $value) {
-  	if (is_array($value) || is_object($value)) {
-  		$converted[$key] = _macro_recursively_convert_objects_to_arrays($value);
-  	}
-  	else {
-  		$converted[$key] = $value;
-  	}
+    if (is_array($value) || is_object($value)) {
+      $converted[$key] = _macro_recursively_convert_objects_to_arrays($value);
+    }
+    else {
+      $converted[$key] = $value;
+    }
   }
-  
+
   return($converted);
 }
 
