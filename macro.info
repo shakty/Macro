@@ -1,4 +1,3 @@
-; $Id$
 name = Macro
 description = "Allows administrators to record (export) and playback (import) form submissions."
 package = Development
