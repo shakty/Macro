@@ -1,0 +1,6 @@
+name = Macro
+description = "Experimental Port: Allows administrators to record (export) and playback (import) form submissions."
+package = Development
+core = 7.x
+
+
