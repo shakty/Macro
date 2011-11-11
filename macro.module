@@ -111,12 +111,26 @@ function macro_form_alter(&$form, $form_state, $form_id) {
     default:
       // Add import / export buttons to each form for simplified macro saving.
       if (user_access('macro access') && variable_get('macro_display_actions', FALSE)) {
-        $form['macro-actions'] = array('#type' => 'fieldset', '#title' => t('Macro actions'), '#weight' => 5000, '#collapsible' => TRUE, '#collapsed' => TRUE);
-        $form['macro-actions']['import-data'] = array('#type' => 'submit', '#name' => 'import', '#value' => t('Import'), '#submit' => array('macro_import_action_submit'));
-        $form['macro-actions']['export-data'] = array('#type' => 'submit', '#name' => 'export', '#value' => t('Export'), '#submit' => array('macro_export_action_submit'));
+        $form['macro-actions'] = array ('#type' => 'fieldset',
+                                        '#title' => t('Macro actions'), 
+                                        '#weight' => 5000, 
+                                        '#collapsible' => TRUE, 
+                                        '#collapsed' => TRUE);
+        
+        $form['macro-actions']['import-data'] = array ('#type' => 'submit',
+                                                       '#name' => 'import', 
+                                                       '#value' => t('Import'), 
+                                                       '#submit' => array('macro_import_action_submit'));
+        
+        $form['macro-actions']['export-data'] = array ('#type' => 'submit',
+                                                       '#name' => 'export',
+                                                       '#value' => t('Export'), 
+                                                       '#submit' => array('macro_export_action_submit'));
 
         if (!variable_get('macro_enabled', FALSE)) {
-          $form['macro-actions']['export-session-data'] = array('#type' => 'submit', '#value' => t('Start session'), '#submit' => array('macro_export_session_action_submit'));
+          $form['macro-actions']['export-session-data'] = array ('#type' => 'submit',
+                                                                 '#value' => t('Start session'), 
+                                                                 '#submit' => array('macro_export_session_action_submit'));
         }
       }
 
@@ -242,6 +256,12 @@ function macro_export_macro() {
     '#default_value' => macro_get_macro(),
     '#rows' => 20,
   );
+  
+  $form['save'] = array (
+    '#type' => 'submit',
+    '#value' => 'submit',
+  );
+  
   return $form;
 
 }
@@ -254,22 +274,37 @@ function macro_export_macro() {
  */
 function macro_get_macro() {
   $subs = variable_get('macro_submissions', array());
-  $string = '';
-  foreach ($subs as $key => $form) {
-    $string .= "\$macro[$key]['form_id'] = " . var_export($form['form_id'], TRUE) . ";\n";
-    $string .= "\$macro[$key]['path'] = " . var_export($form['path'], TRUE) . ";\n";
-    $string .= "\$macro[$key]['values']  = " . var_export(_macro_recursively_convert_objects_to_arrays((array) $form['values']), TRUE) . ";\n";
-    // Add multistep support.
-    if ($form['storage']) {
-      $string .= "\$macro[$key]['storage']  = " . var_export(_macro_recursively_convert_objects_to_arrays((array) $form['storage']), TRUE) . ";\n";
-    }
-    // the form parameters are being used here.
-    array_shift($form['parameters']);
-    $string .= "\$macro[$key]['parameters']  = " . var_export(serialize($form['parameters']), TRUE) . ";\n\n";
 
+//  $string = '';
+//  foreach ($subs as $key => $form) {
+//    $string .= "\$macro[$key]['form_id'] = " . var_export($form['form_id'], TRUE) . ";\n";
+//    $string .= "\$macro[$key]['path'] = " . var_export($form['path'], TRUE) . ";\n";
+//    $string .= "\$macro[$key]['values']  = " . var_export(_macro_recursively_convert_objects_to_arrays((array) $form['values']), TRUE) . ";\n";
+//    // Add multistep support.
+//    if ($form['storage']) {
+//      $string .= "\$macro[$key]['storage']  = " . var_export(_macro_recursively_convert_objects_to_arrays((array) $form['storage']), TRUE) . ";\n";
+//    }
+//    // the form parameters are being used here.
+//    array_shift($form['parameters']);
+//    $string .= "\$macro[$key]['parameters']  = " . var_export(serialize($form['parameters']), TRUE) . ";\n\n";
+//
+//  }
+
+  include_once libraries_get_path('spyc') . '/spyc.php';
+  
+  $yaml = '';
+  $Spyc  = new Spyc();
+  // Create a String from the YAML array
+  foreach($subs as $sub) {
+  	if (!empty($sub['values'])) {
+      $yaml.= $Spyc->dump($sub['values'],2,60);
+      $yaml.= '---';
+  	}
   }
+  return $yaml;  
+ // return $string . '\n' . $yaml;  
+//  return $string;
 
-  return $string;
 }
 
 
