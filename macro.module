@@ -189,7 +189,8 @@ function macro_record_macro($form, &$form_state) {
   $macros = variable_get('macro_submissions', array());
 
   // Remove the $form_state as it will be rebuilt on import.
-  array_shift($form['#parameters']);
+  if(isset($form['#parameters']))
+    array_shift($form['#parameters']);
 
   // TODO: Why is it when the record method is called through the $form['#submit'] when
   // the action buttons are not displayed do these exception values not show up in the 'values' ?
@@ -204,12 +205,12 @@ function macro_record_macro($form, &$form_state) {
   $macro = array(
     'form_id' => $form['form_id']['#value'],
     'path' => $_GET['q'],
-    'parameters' => $form['#parameters'],
+    'parameters' => isset($form['#parameters']) ? $form['#parameters'] : array(),
     'values' => $form_state['values'],
   );
   
   // Support for multistep.
-  if ($form_state['storage']) {
+  if (isset($form_state['storage'])) {
     $macro['storage'] = $form_state['storage'];
   }
   
