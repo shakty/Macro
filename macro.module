@@ -13,11 +13,11 @@ function macro_help($section) {
   switch ($section) {
     case 'admin/help#macro':
       $output = t('Todo: Add help text.');
-    case 'admin/build/macro/export' :
+    case 'admin/macro/export' :
       return t('This output can be saved to the profile`s .macro file, to be automatically played back upon completed install or used on an import on another site.');
-    case 'admin/build/macro/import' :
+    case 'admin/macro/import' :
       return t('Insert recorded macro here to be played into your site. All referenced modules needs to be enabled.');
-    case 'admin/build/macro':
+    case 'admin/macro':
       return t('Configuration settings for the drupal macro engine.');
   }
 }
@@ -38,7 +38,7 @@ function macro_init() {
   if (empty($_POST) && variable_get('macro_enabled', FALSE)) {
     $args = array(
       '%d' => count(variable_get('macro_submissions', array())),
-      '!link' => l('End session', 'admin/build/macro/export/session/end')
+      '!link' => l('End session', 'admin/macro/export/session/end')
     );
 
     drupal_set_message(t('[Active macros: %d | !link]', $args));
@@ -52,7 +52,7 @@ function macro_init() {
 function macro_menu() {
   $items = array();
 
-  $items['admin/build/macro'] = array(
+  $items['admin/macro'] = array(
     'title' => 'Macro engine',
     'description' => 'Configure the Drupal macro engine. Export recorded macros or import previously recorded macros.',
     'page callback' => 'drupal_get_form',
@@ -60,26 +60,26 @@ function macro_menu() {
     'access callback' => 'user_access',
     'access arguments' => array('administer macro settings'),
   );
-  $items['admin/build/macro/export'] = array(
+  $items['admin/macro/export'] = array(
     'title' => 'Export',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('macro_export_macro'),
     'access arguments' => array('macro access'),
     'type' => MENU_LOCAL_TASK,
   );
-  $items['admin/build/macro/import'] = array(
+  $items['admin/macro/import'] = array(
     'title' => 'Import',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('macro_import_macro'),
     'access arguments' => array('macro access'),
     'type' => MENU_LOCAL_TASK,
   );
-  $items['admin/build/macro/settings'] = array(
+  $items['admin/macro/settings'] = array(
     'title' => 'Configure',
     'type' => MENU_DEFAULT_LOCAL_TASK,
     'weight' => -10,
   );
-  $items['admin/build/macro/export/session/end'] = array(
+  $items['admin/macro/export/session/end'] = array(
     'page callback' => 'macro_end_macro_session',
     'access arguments' =>  array('macro access'),
     'type' => MENU_CALLBACK,
@@ -110,12 +110,26 @@ function macro_form_alter(&$form, $form_state, $form_id) {
     default:
       // Add import / export buttons to each form for simplified macro saving.
       if (user_access('macro access') && variable_get('macro_display_actions', FALSE)) {
-        $form['macro-actions'] = array('#type' => 'fieldset', '#title' => t('Macro actions'), '#weight' => 5000, '#collapsible' => TRUE, '#collapsed' => TRUE);
-        $form['macro-actions']['import-data'] = array('#type' => 'submit', '#name' => 'import', '#value' => t('Import'), '#submit' => array('macro_import_action_submit'));
-        $form['macro-actions']['export-data'] = array('#type' => 'submit', '#name' => 'export', '#value' => t('Export'), '#submit' => array('macro_export_action_submit'));
+        $form['macro-actions'] = array ('#type' => 'fieldset',
+                                        '#title' => t('Macro actions'), 
+                                        '#weight' => 5000, 
+                                        '#collapsible' => TRUE, 
+                                        '#collapsed' => TRUE);
+        
+        $form['macro-actions']['import-data'] = array ('#type' => 'submit',
+                                                       '#name' => 'import', 
+                                                       '#value' => t('Import'), 
+                                                       '#submit' => array('macro_import_action_submit'));
+        
+        $form['macro-actions']['export-data'] = array ('#type' => 'submit',
+                                                       '#name' => 'export',
+                                                       '#value' => t('Export'), 
+                                                       '#submit' => array('macro_export_action_submit'));
 
         if (!variable_get('macro_enabled', FALSE)) {
-          $form['macro-actions']['export-session-data'] = array('#type' => 'submit', '#value' => t('Start session'), '#submit' => array('macro_export_session_action_submit'));
+          $form['macro-actions']['export-session-data'] = array ('#type' => 'submit',
+                                                                 '#value' => t('Start session'), 
+                                                                 '#submit' => array('macro_export_session_action_submit'));
         }
       }
 
@@ -138,7 +152,7 @@ function macro_form_alter(&$form, $form_state, $form_id) {
  *  Form submit handler to redirect to the import form.
  */
 function macro_import_action_submit($form, &$form_state) {
-  drupal_goto('admin/build/macro/import', drupal_get_destination());
+  drupal_goto('admin/macro/import', drupal_get_destination());
 }
 
 
@@ -153,7 +167,7 @@ function macro_export_action_submit($form, &$form_state) {
   macro_record_macro($form, $form_state);
   
   // Send straight to the export form.
-  drupal_goto('admin/build/macro/export');
+  drupal_goto('admin/macro/export');
 }
 
 
@@ -174,7 +188,8 @@ function macro_record_macro($form, &$form_state) {
   $macros = variable_get('macro_submissions', array());
 
   // Remove the $form_state as it will be rebuilt on import.
-  array_shift($form['#parameters']);
+  if(isset($form['#parameters']))
+    array_shift($form['#parameters']);
 
   // TODO: Why is it when the record method is called through the $form['#submit'] when
   // the action buttons are not displayed do these exception values not show up in the 'values' ?
@@ -189,12 +204,12 @@ function macro_record_macro($form, &$form_state) {
   $macro = array(
     'form_id' => $form['form_id']['#value'],
     'path' => $_GET['q'],
-    'parameters' => $form['#parameters'],
+    'parameters' => isset($form['#parameters']) ? $form['#parameters'] : array(),
     'values' => $form_state['values'],
   );
   
   // Support for multistep.
-  if ($form_state['storage']) {
+  if (isset($form_state['storage'])) {
     $macro['storage'] = $form_state['storage'];
   }
   
@@ -241,6 +256,12 @@ function macro_export_macro() {
     '#default_value' => macro_get_macro(),
     '#rows' => 20,
   );
+  
+  $form['save'] = array (
+    '#type' => 'submit',
+    '#value' => 'submit',
+  );
+  
   return $form;
 
 }
@@ -269,6 +290,28 @@ function macro_get_macro() {
   }
 
   return $string;
+}
+
+/**
+ * As macro_get_macro, but the output is a YAML file
+ * 
+ * @return YAML string representation of the recorded macro.
+ */
+function macro_get_macro_yaml() {
+  $subs = variable_get('macro_submissions', array());
+
+  include_once libraries_get_path('spyc') . '/spyc.php';
+  
+  $yaml = '';
+  $Spyc  = new Spyc();
+  // Create a String from the YAML array
+  foreach($subs as $sub) {
+  	if (!empty($sub['values'])) {
+      $yaml.= $Spyc->dump($sub['values'],2,60);
+      $yaml.= '---';
+  	}
+  }
+  return $yaml;  
 }
 
 
@@ -340,7 +383,7 @@ function macro_admin_settings() {
  */
 function macro_end_macro_session() {
   variable_set('macro_enabled', FALSE);
-  drupal_goto('admin/build/macro/export');
+  drupal_goto('admin/macro/export');
 }
 
 

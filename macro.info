@@ -1,6 +1,6 @@
 name = Macro
-description = "Allows administrators to record (export) and playback (import) form submissions."
+description = "Experimental port to DR7: Allows administrators to record (export) and playback (import) form submissions."
 package = Development
-core = 6.x
+core = 7.x
 
-
+dependencies[] = libraries
