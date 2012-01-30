@@ -93,6 +93,7 @@ function macro_menu() {
  * Implementation of hook_form_alter().
  */
 function macro_form_alter(&$form, $form_state, $form_id) {
+
   switch ($form_id) {
     case 'macro_export_macro':
       /** TODO: eventually add file saving with foldering options.
@@ -137,6 +138,7 @@ function macro_form_alter(&$form, $form_state, $form_id) {
       if ($form_id != 'macro_import_macro' && variable_get('macro_enabled', FALSE)) {
         $form['#submit'][] = 'macro_record_macro';
       }
+      
       
       // Clear the current sessions.
       if (variable_get('macro_delete', FALSE)) {
@@ -280,13 +282,14 @@ function macro_get_macro() {
     $string .= "\$macro[$key]['path'] = " . var_export($form['path'], TRUE) . ";\n";
     $string .= "\$macro[$key]['values']  = " . var_export(_macro_recursively_convert_objects_to_arrays((array) $form['values']), TRUE) . ";\n";
     // Add multistep support.
-    if ($form['storage']) {
+    if (isset($form['storage'])) {
       $string .= "\$macro[$key]['storage']  = " . var_export(_macro_recursively_convert_objects_to_arrays((array) $form['storage']), TRUE) . ";\n";
     }
-    // the form parameters are being used here.
-    array_shift($form['parameters']);
-    $string .= "\$macro[$key]['parameters']  = " . var_export(serialize($form['parameters']), TRUE) . ";\n\n";
-
+    if (isset($form['parameters'])) {    
+      // the form parameters are being used here.
+      array_shift($form['parameters']);
+      $string .= "\$macro[$key]['parameters']  = " . var_export(serialize($form['parameters']), TRUE) . ";\n\n";
+    }
   }
 
   return $string;
@@ -409,7 +412,7 @@ function drupal_execute_macro($macro) {
     $param = unserialize($data['parameters']);
     $form_values = array('values' => $data['values']);
     // Support for multistep.
-    if ($data['storage']) {
+    if (isset($data['storage'])) {
       $form_values['storage'] = $data['storage'];
     }
     $args = array($data['form_id'], $form_values);
