@@ -18,7 +18,7 @@ function macro_help($section) {
     case 'admin/macro/import' :
       return t('Insert recorded macro here to be played into your site. All referenced modules needs to be enabled.');
     case 'admin/macro':
-      return t('Configuration settings for the drupal macro engine.');
+      return t('Configuration settings for the drupal macro engine. The export/import functions are currently not working and will be ported soon.');
   }
 }
 
@@ -62,20 +62,20 @@ function macro_menu() {
     'access callback' => 'user_access',
     'access arguments' => array('administer macro settings'),
   );
-  $items['admin/macro/export'] = array(
-    'title' => 'Export',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('macro_export_macro'),
-    'access arguments' => array('macro access'),
-    'type' => MENU_LOCAL_TASK,
-  );
-  $items['admin/macro/import'] = array(
-    'title' => 'Import',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('macro_import_macro'),
-    'access arguments' => array('macro access'),
-    'type' => MENU_LOCAL_TASK,
-  );
+//  $items['admin/macro/export'] = array(
+//    'title' => 'Export',
+//    'page callback' => 'drupal_get_form',
+//    'page arguments' => array('macro_export_macro'),
+//    'access arguments' => array('macro access'),
+//    'type' => MENU_LOCAL_TASK,
+//  );
+//  $items['admin/macro/import'] = array(
+//    'title' => 'Import',
+//    'page callback' => 'drupal_get_form',
+//    'page arguments' => array('macro_import_macro'),
+//    'access arguments' => array('macro access'),
+//    'type' => MENU_LOCAL_TASK,
+//  );
   $items['admin/macro/settings'] = array(
     'title' => 'Configure',
     'type' => MENU_DEFAULT_LOCAL_TASK,
@@ -389,12 +389,6 @@ function macro_admin_settings() {
   return system_settings_form($form);
 }
 
-//function macro_admin_settings_submit($form, &$form_state) {
-//  variable_set('macro_enabled', $form_state['values']['settings_general']['macro_enabled']);
-//  variable_set('macro_display_actions', $form_state['values']['settings_general']['macro_display_actions']);
-//  variable_set('macro_delete', $form_state['values']['settings_general']['macro_delete']);
-//}
-
 
 /**
  *  End a macro session from a page callback with a redirect to the export form.
@@ -432,8 +426,11 @@ function drupal_execute_macro($macro) {
     }
     $args = array($data['form_id'], $form_values);
     $args = array_merge($args, $param);
-    
-    $results[] = call_user_func_array('drupal_execute', $args);
+    // TODO: fix bug
+    // Warning: Parameter 2 to drupal_form_submit() expected to be a reference, 
+    // value given in drupal_execute_macro() 
+    // (line 431 of /var/www/drupal-7.9/sites/all/modules/Macro/macro.module).
+    $results[] = call_user_func_array('drupal_form_submit', $args);
     if (form_get_errors()) {
        drupal_set_message(t("An error has occured with macro #%macro_number , form_id %form_id. Please check the errors displayed for more details.", array('%macro_number' => $key, '%form_id' => $data['form_id'])));
     }
