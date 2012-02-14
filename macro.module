@@ -35,6 +35,7 @@ function macro_perm() {
  *  Implementation of hook_init().
  */
 function macro_init() {
+  macro_delete();
   if (empty($_POST) && variable_get('macro_enabled', FALSE)) {
     $args = array(
       '%d' => count(variable_get('macro_submissions', array())),
@@ -50,6 +51,7 @@ function macro_init() {
  * Implementation of hook_menu().
  */
 function macro_menu() {
+  macro_delete();
   $items = array();
 
   $items['admin/macro'] = array(
@@ -88,12 +90,23 @@ function macro_menu() {
   return $items;
 }
 
+/**
+ * Deletes Macros if variable delete_macro is set
+ */
+function macro_delete() {
+  // Clear the current sessions.
+  if (variable_get('macro_delete', FALSE)) {
+    variable_set('macro_submissions', array());
+    variable_set('macro_delete', FALSE);
+  }
+}
 
 /**
  * Implementation of hook_form_alter().
  */
 function macro_form_alter(&$form, $form_state, $form_id) {
-
+  // Clear the current sessions.
+  macro_delete();
   switch ($form_id) {
     case 'macro_export_macro':
       /** TODO: eventually add file saving with foldering options.
@@ -111,24 +124,24 @@ function macro_form_alter(&$form, $form_state, $form_id) {
     default:
       // Add import / export buttons to each form for simplified macro saving.
       if (user_access('macro access') && variable_get('macro_display_actions', FALSE)) {
-        $form['macro-actions'] = array ('#type' => 'fieldset',
+        $form['macro-actions'] = array('#type' => 'fieldset',
                                         '#title' => t('Macro actions'), 
                                         '#weight' => 5000, 
                                         '#collapsible' => TRUE, 
                                         '#collapsed' => TRUE);
         
-        $form['macro-actions']['import-data'] = array ('#type' => 'submit',
+        $form['macro-actions']['import-data'] = array('#type' => 'submit',
                                                        '#name' => 'import', 
                                                        '#value' => t('Import'), 
                                                        '#submit' => array('macro_import_action_submit'));
         
-        $form['macro-actions']['export-data'] = array ('#type' => 'submit',
+        $form['macro-actions']['export-data'] = array('#type' => 'submit',
                                                        '#name' => 'export',
                                                        '#value' => t('Export'), 
                                                        '#submit' => array('macro_export_action_submit'));
 
         if (!variable_get('macro_enabled', FALSE)) {
-          $form['macro-actions']['export-session-data'] = array ('#type' => 'submit',
+          $form['macro-actions']['export-session-data'] = array('#type' => 'submit',
                                                                  '#value' => t('Start session'), 
                                                                  '#submit' => array('macro_export_session_action_submit'));
         }
@@ -140,11 +153,7 @@ function macro_form_alter(&$form, $form_state, $form_id) {
       }
       
       
-      // Clear the current sessions.
-      if (variable_get('macro_delete', FALSE)) {
-        variable_set('macro_submissions', array());
-        variable_set('macro_delete', FALSE);
-      }
+
       break;
   } 
 }
@@ -190,7 +199,7 @@ function macro_record_macro($form, &$form_state) {
   $macros = variable_get('macro_submissions', array());
 
   // Remove the $form_state as it will be rebuilt on import.
-  if(isset($form['#parameters']))
+  if (isset($form['#parameters']))
     array_shift($form['#parameters']);
 
   // TODO: Why is it when the record method is called through the $form['#submit'] when
@@ -240,7 +249,7 @@ function _macro_recursively_convert_objects_to_arrays($entity) {
     }
   }
 
-  return($converted);
+  return ($converted);
 }
 
 
@@ -259,7 +268,7 @@ function macro_export_macro() {
     '#rows' => 20,
   );
   
-  $form['save'] = array (
+  $form['save'] = array(
     '#type' => 'submit',
     '#value' => 'submit',
   );
@@ -308,11 +317,11 @@ function macro_get_macro_yaml() {
   $yaml = '';
   $Spyc  = new Spyc();
   // Create a String from the YAML array
-  foreach($subs as $sub) {
-  	if (!empty($sub['values'])) {
-      $yaml.= $Spyc->dump($sub['values'],2,60);
-      $yaml.= '---';
-  	}
+  foreach ($subs as $sub) {
+    if (!empty($sub['values'])) {
+      $yaml .= $Spyc->dump($sub['values'], 2, 60);
+      $yaml .= '---';
+    }
   }
   return $yaml;  
 }
@@ -379,6 +388,12 @@ function macro_admin_settings() {
 
   return system_settings_form($form);
 }
+
+//function macro_admin_settings_submit($form, &$form_state) {
+//  variable_set('macro_enabled', $form_state['values']['settings_general']['macro_enabled']);
+//  variable_set('macro_display_actions', $form_state['values']['settings_general']['macro_display_actions']);
+//  variable_set('macro_delete', $form_state['values']['settings_general']['macro_delete']);
+//}
 
 
 /**
